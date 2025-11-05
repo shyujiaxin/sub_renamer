@@ -13,84 +13,83 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-      
-    - name: 设置 Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-        
-    - name: 安装依赖
-      run: |
-        python -m pip install --upgrade pip
-        pip install pylint
-        
-    - name: 运行 Pylint
-      run: |
-        pylint --max-line-length=180 sub_renamer/sub_renamer.py
-        
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+
+      - name: 运行 Pylint
+        run: |
+          pylint --max-line-length=180 sub_renamer.py
+
   build:
     runs-on: windows-latest
     permissions:
       actions: write
       contents: read
-    
-    steps:
-    - name: 检出代码
-      uses: actions/checkout@v4
-      
-    - name: 设置 Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-        
-    - name: 安装依赖
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-        
-    - name: 使用 PyInstaller 打包
-      run: |
-        pyinstaller -F sub_renamer/sub_renamer.py --name sub_renamer --distpath sub_renamer/dist --workpath sub_renamer/build --specpath sub_renamer
-        
-    - name: 上传构建产物
-      uses: actions/upload-artifact@v4
-      with:
-        name: sub_renamer-executable
-        path: sub_renamer/dist/sub_renamer.exe
-        
-    - name: 清理旧构建产物（保留最近7次）
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const artifactName = 'sub_renamer-executable';
-          const keepCount = 7;
-          
-          const artifacts = await github.rest.actions.listArtifactsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            per_page: 100
-          });
-          
-          const matchingArtifacts = artifacts.data.artifacts
-            .filter(artifact => artifact.name === artifactName)
-            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-          
-          if (matchingArtifacts.length > keepCount) {
-            const artifactsToDelete = matchingArtifacts.slice(keepCount);
-            for (const artifact of artifactsToDelete) {
-              await github.rest.actions.deleteArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id
-              });
-              console.log(`已删除旧构建产物: ${artifact.id} (创建于 ${artifact.created_at})`);
-            }
-            console.log(`已清理 ${artifactsToDelete.length} 个旧构建产物，保留最近 ${keepCount} 次`);
-          } else {
-            console.log(`当前共有 ${matchingArtifacts.length} 个构建产物，无需清理`);
-          }
 
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: 使用 PyInstaller 打包
+        run: |
+          pyinstaller -F sub_renamer.py --name sub_renamer
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub_renamer-executable
+          path: dist/sub_renamer.exe
+
+      - name: 清理旧构建产物（保留最近7次）
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifactName = 'sub_renamer-executable';
+            const keepCount = 7;
+
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            const matchingArtifacts = artifacts.data.artifacts
+              .filter(artifact => artifact.name === artifactName)
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            if (matchingArtifacts.length > keepCount) {
+              const artifactsToDelete = matchingArtifacts.slice(keepCount);
+              for (const artifact of artifactsToDelete) {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id
+                });
+                console.log(`已删除旧构建产物: ${artifact.id} (创建于 ${artifact.created_at})`);
+              }
+              console.log(`已清理 ${artifactsToDelete.length} 个旧构建产物，保留最近 ${keepCount} 次`);
+            } else {
+              console.log(`当前共有 ${matchingArtifacts.length} 个构建产物，无需清理`);
+            }
