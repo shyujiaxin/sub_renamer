@@ -29,9 +29,8 @@ jobs:
         pip install pylint
         
     - name: 运行 Pylint
-      working-directory: sub_renamer
       run: |
-        pylint sub_renamer.py
+        pylint --max-line-length=180 sub_renamer/sub_renamer.py
         
   build:
     runs-on: windows-latest
@@ -54,8 +53,8 @@ jobs:
         pip install pyinstaller
         
     - name: 使用 PyInstaller 打包
-      working-directory: sub_renamer
       run: |
+        cd sub_renamer
         pyinstaller -F sub_renamer.py --name sub_renamer
         
     - name: 上传构建产物
